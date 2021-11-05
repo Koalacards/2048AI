@@ -1,5 +1,6 @@
 import random
 import math
+import sys
 import click
 
 CELL_WIDTH = 7
@@ -59,7 +60,7 @@ class GameBoard():
         selected_space = random.choice(blank_spaces)
         self.spaces[selected_space[0]][selected_space[1]] = random.choices([2, 4], weights=[0.9, 0.1])[0]
 
-    def has_moves(self) -> None:
+    def has_moves(self) -> bool:
         for i in range(4):
             for j in range(4):
                 if self.spaces[i][j] is None:
@@ -244,12 +245,10 @@ class GameBoard():
                     self.spaces[row][col] = abs(board_copy[row][col])
         return changed
 
-def handle(c, board):
-    printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
-    click.echo()
+def handle(c, board) -> None:
     if c == '\x1b' or c == 'q':
-        click.echo('Exiting...')
-        return False
+        print('Exiting...')
+        sys.exit(0)
     elif c == '\x1b[A' or c == 'w':
         if board.up():
             board.add_random_tile()
@@ -269,8 +268,7 @@ def play_game():
     board = GameBoard()
     print(board)
     while board.has_moves():
-        if not handle(click.getchar(), board):
-            break
+        handle(click.getchar(), board)
     print("Game over")
 
 if __name__ == "__main__":
