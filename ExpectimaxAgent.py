@@ -2,24 +2,24 @@ import copy
 from GameAgent import GameAgent, PLAYER_ACTIONS, play_n_times, play_with_agent
 
 class ExpectimaxState():
-    def __init__(self, board, playerTurn = True) -> None:
+    def __init__(self, board, player_turn = True) -> None:
         self.board = board
-        self.playerTurn = playerTurn
+        self.player_turn = player_turn
 
-    def cloneBoard(self):
+    def clone_board(self):
       return copy.deepcopy(self.board)
 
-    def generateSuccessor(self, action):
-      newBoard = self.cloneBoard()
-      if self.playerTurn:
-        getattr(newBoard, action)()
+    def generate_successor(self, action):
+      new_board = self.clone_board()
+      if self.player_turn:
+        getattr(new_board, action)()
       else:
-        newBoard.spaces[action[0]][action[1]] = action[2]
-      return ExpectimaxState(newBoard, not self.playerTurn)
+        new_board.spaces[action[0]][action[1]] = action[2]
+      return ExpectimaxState(new_board, not self.player_turn)
 
-    def getLegalActions(self):
-      if self.playerTurn:
-        return [action for action in PLAYER_ACTIONS if getattr(self.cloneBoard(), action)()]
+    def get_legal_actions(self):
+      if self.player_turn:
+        return [action for action in PLAYER_ACTIONS if getattr(self.clone_board(), action)()]
       else:
         moves = []
         for i in range(len(self.board.spaces)):
@@ -29,10 +29,10 @@ class ExpectimaxState():
                     moves += [(i, j, 4)]
         return moves
 
-    def getScore(self):
+    def get_score(self):
       return self.board.score
 
-    def isOver(self):
+    def is_over(self):
       return not self.board.has_moves()
 
 
@@ -41,37 +41,37 @@ class ExpectimaxAgent(GameAgent):
       self.max_depth = max_depth
 
   def evaluate(self, state):
-      return state.getScore()
+      return state.get_score()
 
   def get_move(self, board):
-      return self.getAction(ExpectimaxState(board))
+      return self.get_action(ExpectimaxState(board))
   
-  def getNextActionValues(self, state, turn):
-      return [self.value(state.generateSuccessor(action), turn + 1) for action in state.getLegalActions()]
+  def get_next_action_values(self, state, turn):
+      return [self.value(state.generate_successor(action), turn + 1) for action in state.get_legal_actions()]
 
-  def maxValue(self, state, turn):
-      return max(self.getNextActionValues(state, turn))
+  def max_value(self, state, turn):
+      return max(self.get_next_action_values(state, turn))
 
-  def avgValue(self, state, turn):
-      nextActionValues = self.getNextActionValues(state, turn)
-      return sum(nextActionValues) / len(nextActionValues)
+  def avg_value(self, state, turn):
+      next_action_values = self.get_next_action_values(state, turn)
+      return sum(next_action_values) / len(next_action_values)
 
   def value(self, state, turn = 0):
-      if state.isOver(): return state.getScore()
+      if state.is_over(): return state.get_score()
       if turn >= self.max_depth: return self.evaluate(state)
-      if state.playerTurn: return self.maxValue(state, turn)
-      else: return self.avgValue(state, turn)
+      if state.player_turn: return self.max_value(state, turn)
+      else: return self.avg_value(state, turn)
 
-  def getAction(self, gameState):
-      bestAction = None
-      bestActionValue = 0
-      for action in gameState.getLegalActions():
-          actionValue = self.value(gameState.generateSuccessor(action))
-          if bestAction == None or actionValue > bestActionValue:
-              bestAction = action
-              bestActionValue = actionValue
+  def get_action(self, game_state):
+      best_action = None
+      best_action_value = 0
+      for action in game_state.get_legal_actions():
+          action_value = self.value(game_state.generate_successor(action))
+          if best_action == None or action_value > best_action_value:
+              best_action = action
+              best_action_value = action_value
       
-      return bestAction
+      return best_action
 
 # play_with_agent(ExpectimaxAgent(1))
 
