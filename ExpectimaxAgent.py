@@ -1,5 +1,5 @@
 import copy
-from GameAgent import GameAgent, PLAYER_ACTIONS, play_with_agent
+from GameAgent import GameAgent, PLAYER_ACTIONS, play_n_times, play_with_agent
 
 class ExpectimaxState():
     def __init__(self, board, playerTurn = True) -> None:
@@ -69,4 +69,6 @@ class ExpectimaxAgent(GameAgent):
       
       return bestAction
 
-play_with_agent(ExpectimaxAgent())
+# play_with_agent(ExpectimaxAgent(1))
+
+play_n_times(ExpectimaxAgent(1), 10)
