@@ -11,7 +11,7 @@ class ExpectimaxState():
         self.playerTurn = playerTurn
 
     def cloneBoard(self):
-      return copy.deepCopy(self.board)
+      return copy.deepcopy(self.board)
 
     def generateSuccessor(self, action):
       newBoard = self.cloneBoard()
