@@ -40,6 +40,9 @@ class ExpectimaxAgent(GameAgent):
   def __init__(self, max_depth = 3) -> None:
       self.max_depth = max_depth
 
+  def evaluate(self, state):
+      return state.getScore()
+
   def get_move(self, board):
       return self.getAction(ExpectimaxState(board))
   
@@ -54,7 +57,8 @@ class ExpectimaxAgent(GameAgent):
       return sum(nextActionValues) / len(nextActionValues)
 
   def value(self, state, turn = 0):
-      if state.isOver() or turn >= self.max_depth: return state.getScore()
+      if state.isOver(): return state.getScore()
+      if turn >= self.max_depth: return self.evaluate(state)
       if state.playerTurn: return self.maxValue(state, turn)
       else: return self.avgValue(state, turn)
 
