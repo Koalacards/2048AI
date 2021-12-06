@@ -26,3 +26,5 @@ class UserAgent(GameAgent):
         # left or a
         elif key == '\x1b[D' or key == 'a':
             return 'left'
+        
+        return self.get_move(board)

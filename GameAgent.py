@@ -1,3 +1,4 @@
+import statistics
 from GameBoard import GameBoard
 
 class GameAgent():
@@ -14,11 +15,19 @@ def play_with_agent(agent, show_board = True, mute = False):
         if board.make_move(agent.get_move(board)):
             board.add_random_tile()
         if show_board: print(board)
-    if not mute: print("Game over\nScore:", board.score)
-    return board.score
+    highestTile = max(map(max, board.spaces))
+    if not mute: 
+        print("Game over\nScore:", board.score, "\nHighest Tile:", highestTile)
+    return (board.score, highestTile)
 
 def play_n_times(agent, num_games = 100):
-    scores = [play_with_agent(agent, False, True) for i in range(num_games)]
+    scores = []
+    highestTiles = []
+    for i in range(num_games):
+        score, highestTile = play_with_agent(agent, False, True)
+        scores.append(score)
+        highestTiles.append(highestTile)
     avgScore = sum(scores) / len(scores)
     print("Average score after", num_games, "games:", avgScore)
-    return avgScore
+    print("Highest tile attained:", max(highestTiles))
+    print("Median highest tile:", statistics.median(highestTiles))
