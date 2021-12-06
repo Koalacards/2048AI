@@ -1,3 +1,4 @@
+import copy
 import random
 import math
 
@@ -5,6 +6,7 @@ CELL_WIDTH = 7
 CELL_HEIGHT = 3
 BASE_NUMBER = 2
 GRID_SIZE = 4
+PLAYER_ACTIONS = ['up', 'down', 'left', 'right']
 
 class GameBoard():
     def __init__(self) -> None:
@@ -304,3 +306,22 @@ class GameBoard():
                 else:
                     self.spaces[row][col] = abs(board_copy[row][col])
         return changed
+    
+    def make_move(self, direction) -> bool:
+        """
+        Given a direction, attempt to move the tiles in that direction. 
+        Returns a boolean indicating whether any tiles were moved or combined.
+        """
+        return getattr(self, direction)()
+
+    def is_legal_move(self, direction) -> bool:
+        """
+        Return whether moving in a given direction will have any effect.
+        """
+        return copy.deepcopy(self).make_move(direction)
+
+    def get_legal_moves(self) -> list:
+        """
+        Return a list of legal moves directions.
+        """
+        return [action for action in PLAYER_ACTIONS if self.is_legal_move(action)]
