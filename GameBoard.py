@@ -1,4 +1,3 @@
-import copy
 import random
 import math
 
@@ -9,15 +8,24 @@ GRID_SIZE = 4
 PLAYER_ACTIONS = ['up', 'down', 'left', 'right']
 
 class GameBoard():
-    def __init__(self) -> None:
+    def __init__(self, add_tiles = True) -> None:
         self.score = 0
 
         # generate empty board
         self.spaces = [[None] * GRID_SIZE for i in range(GRID_SIZE)]
 
         # add two numbers to random spots on grid
-        self.add_random_tile()
-        self.add_random_tile()
+        if add_tiles:
+            self.add_random_tile()
+            self.add_random_tile()
+
+    def copy(self):
+        new_board = GameBoard(False)
+        new_board.score = self.score
+        for i in range(len(self.spaces)):
+            for j in range(len(self.spaces)):
+                new_board.spaces[i][j] = self.spaces[i][j]
+        return new_board
 
     def __repr__(self):
         # print top lines and first row of numbers/spaces
@@ -318,10 +326,20 @@ class GameBoard():
         """
         Return whether moving in a given direction will have any effect.
         """
-        return copy.deepcopy(self).make_move(direction)
+        return self.copy().make_move(direction)
 
     def get_legal_moves(self) -> list:
         """
-        Return a list of legal moves directions.
+        Return a list of legal move directions.
         """
         return [action for action in PLAYER_ACTIONS if self.is_legal_move(action)]
+
+    def get_possible_successors(self) -> list:
+        """
+        Return a list of possible next game states.
+        """
+        successors = []
+        for action in PLAYER_ACTIONS:
+            copy = self.copy()
+            if copy.make_move(action): successors.append(copy)
+        return successors

@@ -1,6 +1,4 @@
-import copy
 from GameAgent import GameAgent, play_n_times, play_with_agent
-from GameBoard import PLAYER_ACTIONS
 
 class ExpectimaxState():
     def __init__(self, board, player_turn = True) -> None:
@@ -8,16 +6,22 @@ class ExpectimaxState():
         self.player_turn = player_turn
 
     def generate_successor(self, action):
-      new_board = copy.deepcopy(self.board)
+      new_board = self.board.copy()
       if self.player_turn:
         new_board.make_move(action)
       else:
         new_board.spaces[action[0]][action[1]] = action[2]
       return ExpectimaxState(new_board, not self.player_turn)
 
+    def get_successors(self):
+      if self.player_turn:
+        return [ExpectimaxState(board, not self.player_turn) for board in self.board.get_possible_successors()]
+      else:
+        return [self.generate_successor(action) for action in self.get_legal_actions()]
+        
     def get_legal_actions(self):
       if self.player_turn:
-        return [action for action in PLAYER_ACTIONS if self.board.is_legal_move(action)]
+        return self.board.get_legal_moves()
       else:
         moves = []
         for i in range(len(self.board.spaces)):
@@ -45,7 +49,7 @@ class ExpectimaxAgent(GameAgent):
       return self.get_action(ExpectimaxState(board))
   
   def get_next_action_values(self, state, turn):
-      return [self.value(state.generate_successor(action), turn + 1) for action in state.get_legal_actions()]
+      return [self.value(successor, turn + 1) for successor in state.get_successors()]
 
   def max_value(self, state, turn):
       return max(self.get_next_action_values(state, turn))
@@ -68,9 +72,9 @@ class ExpectimaxAgent(GameAgent):
           if best_action == None or action_value > best_action_value:
               best_action = action
               best_action_value = action_value
-      
+
       return best_action
 
-play_with_agent(ExpectimaxAgent(4))
+play_with_agent(ExpectimaxAgent(5))
 
 # play_n_times(ExpectimaxAgent(2), 10)
