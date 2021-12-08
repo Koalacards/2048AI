@@ -20,11 +20,11 @@ def play_with_agent(agent, show_board = True, mute = False):
         print("Game over\nScore:", board.score, "\nHighest Tile:", highestTile)
     return (board.score, highestTile)
 
-def play_n_times(agent, num_games = 100):
+def play_n_times(agent, num_games = 100, verbose = False):
     scores = []
     highestTiles = []
     for i in range(num_games):
-        score, highestTile = play_with_agent(agent, False, True)
+        score, highestTile = play_with_agent(agent, False, not verbose)
         scores.append(score)
         highestTiles.append(highestTile)
     avgScore = sum(scores) / len(scores)
