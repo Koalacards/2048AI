@@ -1,11 +1,85 @@
 import random
 import math
+import itertools
+from PerfTimer import perf_timer
 
 CELL_WIDTH = 7
 CELL_HEIGHT = 3
 BASE_NUMBER = 2
 GRID_SIZE = 4
 PLAYER_ACTIONS = ['up', 'down', 'left', 'right']
+
+row_left_perms = {} # map row to left shift performed on row
+row_right_perms = {} # map row to right shift performed on row
+
+def find_first_left(row_copy, col) -> tuple[int, int]:
+    """
+    Returns a tuple of the value of the first non-empty cell to the left of the given one,
+        and the column index of that cell.
+        Returns None if no cell found.
+    """
+    for i in range(col-1, -1, -1):
+        if row_copy[i] is not None:
+            return (row_copy[i], i)
+    return None
+
+# fill out left and right shift maps (used for more efficient game logic)
+
+for row in itertools.product(*[range(18)]*4):
+    tiles = []
+    for num in row:
+        if num == 0:
+            tiles.append(None)
+        else:
+            tiles.append(2**num)
+    
+    row_copy = [None] * GRID_SIZE
+    changed = False
+    score_add = 0
+
+    for col in range(GRID_SIZE):
+        if tiles[col] is None:
+            continue
+        if col == 0:
+            row_copy[col] = tiles[col]
+            continue
+        first_left = find_first_left(row_copy, col)
+        if first_left is None:
+            changed = True
+            row_copy[0] = tiles[col]
+        elif first_left[0] == tiles[col]:
+            changed = True
+            row_copy[first_left[1]] *= -2
+            score_add += tiles[col] * 2
+        elif first_left[1] < col - 1:
+            changed = True
+            row_copy[first_left[1] + 1] = tiles[col]
+        else:
+            row_copy[col] = tiles[col]
+
+    new_row = [None] * GRID_SIZE
+    for col in range(GRID_SIZE):
+        if row_copy[col] is None:
+            new_row[col] = None
+        else:
+            new_row[col] = abs(row_copy[col])
+    
+    row_left_perms[tuple(tiles)] = (new_row, changed, score_add)
+    row_right_perms[tuple(reversed(tiles))] = (list(reversed(new_row)), changed, score_add)
+
+def row_left(row):
+    """
+    Given an array representing a row, perform a left shift on it.
+    """
+    new_row, changed, score_add = row_left_perms[tuple(row)]
+    return new_row.copy(), changed, score_add
+
+def row_right(row):
+    """
+    Given an array representing a row, perform a right shift on it.
+    """
+    new_row, changed, score_add = row_right_perms[tuple(row)]
+    return new_row.copy(), changed, score_add
 
 class GameBoard():
     def __init__(self, add_tiles = True) -> None:
@@ -23,8 +97,7 @@ class GameBoard():
         new_board = GameBoard(False)
         new_board.score = self.score
         for i in range(len(self.spaces)):
-            for j in range(len(self.spaces)):
-                new_board.spaces[i][j] = self.spaces[i][j]
+            new_board.spaces[i] = self.spaces[i].copy()
         return new_board
 
     def __repr__(self):
@@ -116,204 +189,61 @@ class GameBoard():
                     pass
         return False
 
-    def find_first_left(self, board_copy, row, col) -> tuple[int, int]:
+    def horizontal_move(self, shift_func):
         """
-        Returns a tuple of the value of the first non-empty cell to the left of the given one,
-            and the column index of that cell.
-            Returns None if no cell found.
+        Attempts to move tiles horizontally according to the specified function. 
+        Returns a boolean indicating whether any tiles were moved or combined.
         """
-        for i in range(col-1, -1, -1):
-            if board_copy[row][i] is not None:
-                return (board_copy[row][i], i)
-        return None
+        changed = False
+        for row in range(GRID_SIZE):
+            self.spaces[row], is_changed, score_add = shift_func(self.spaces[row])
+            if is_changed: changed = True
+            self.score += score_add
+        return changed
+
+    
+    def vertical_move(self, shift_func) -> bool:
+        """
+        Attempts to move tiles vertically according to the specified function. 
+        Returns a boolean indicating whether any tiles were moved or combined.
+        """
+        changed = False
+        for col in range(GRID_SIZE):
+            column = [self.spaces[row][col] for row in range(GRID_SIZE)]
+            new_column, is_changed, score_add = shift_func(column)
+            for row in range(GRID_SIZE):
+                self.spaces[row][col] = new_column[row]
+            if is_changed: changed = True
+            self.score += score_add
+        return changed
 
     def left(self) -> bool:
         """
         Attempts to move tiles to the left. Returns a boolean indicating whether
         any tiles were moved or combined.
         """
-        changed = False
-        board_copy = [[None] * GRID_SIZE for i in range(GRID_SIZE)]
-        for col in range(GRID_SIZE):
-            for row in range(GRID_SIZE):
-                if self.spaces[row][col] is None:
-                    continue
-                if col == 0:
-                    board_copy[row][col] = self.spaces[row][col]
-                    continue
-                first_left = self.find_first_left(board_copy, row, col)
-                if first_left is None:
-                    changed = True
-                    board_copy[row][0] = self.spaces[row][col]
-                elif first_left[0] == self.spaces[row][col]:
-                    changed = True
-                    board_copy[row][first_left[1]] *= -2
-                    self.score += self.spaces[row][col] * 2
-                elif first_left[1] < col - 1:
-                    changed = True
-                    board_copy[row][first_left[1] + 1] = self.spaces[row][col]
-                else:
-                    board_copy[row][col] = self.spaces[row][col]
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                if board_copy[row][col] is None:
-                    self.spaces[row][col] = None
-                else:
-                    self.spaces[row][col] = abs(board_copy[row][col])
-        return changed
-
-    def find_first_right(self, board_copy, row, col) -> tuple[int, int]:
-        """
-        Returns a tuple of the value of the first non-empty cell to the right of the given one,
-            and the column index of that cell.
-            Returns None if no cell found.
-        """
-        for i in range(col+1, GRID_SIZE):
-            if board_copy[row][i] is not None:
-                return (board_copy[row][i], i)
-        return None
+        return self.horizontal_move(row_left)
 
     def right(self) -> bool:
         """
         Attempts to move tiles to the right. Returns a boolean indicating whether
         any tiles were moved or combined.
         """
-        changed = False
-        board_copy = [[None] * GRID_SIZE for i in range(GRID_SIZE)]
-        for col in range(GRID_SIZE - 1, -1, -1):
-            for row in range(GRID_SIZE):
-                if self.spaces[row][col] is None:
-                    continue
-                if col == GRID_SIZE - 1:
-                    board_copy[row][col] = self.spaces[row][col]
-                    continue
-                first_right = self.find_first_right(board_copy, row, col)
-                if first_right is None:
-                    changed = True
-                    board_copy[row][GRID_SIZE - 1] = self.spaces[row][col]
-                elif first_right[0] == self.spaces[row][col]:
-                    changed = True
-                    board_copy[row][first_right[1]] *= -2
-                    self.score += self.spaces[row][col] * 2
-                elif first_right[1] > col + 1:
-                    changed = True
-                    board_copy[row][first_right[1] - 1] = self.spaces[row][col]
-                else:
-                    board_copy[row][col] = self.spaces[row][col]
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                if board_copy[row][col] is None:
-                    self.spaces[row][col] = None
-                else:
-                    self.spaces[row][col] = abs(board_copy[row][col])
-        return changed
-
-    def find_first_up(self, board_copy, row, col) -> tuple[int, int]:
-        """
-        Returns a tuple of the value of the first non-empty cell above the given one,
-            and the row index of that cell.
-            Returns None if no cell found.
-        """
-        for i in range(row-1, -1, -1):
-            if board_copy[i][col] is not None:
-                return (board_copy[i][col], i)
-        return None
+        return self.horizontal_move(row_right)
 
     def up(self) -> bool:
         """
         Attempts to move tiles up. Returns a boolean indicating whether
         any tiles were moved or combined.
         """
-        changed = False
-        board_copy = [[None] * GRID_SIZE for i in range(GRID_SIZE)]
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                if self.spaces[row][col] is None:
-                    continue
-                if row == 0:
-                    board_copy[row][col] = self.spaces[row][col]
-                    continue
-                first_up = self.find_first_up(board_copy, row, col)
-                if first_up is None:
-                    changed = True
-                    board_copy[0][col] = self.spaces[row][col]
-                elif first_up[0] == self.spaces[row][col]:
-                    changed = True
-                    board_copy[first_up[1]][col] *= -2
-                    self.score += self.spaces[row][col] * 2
-                elif first_up[1] < row - 1:
-                    changed = True
-                    board_copy[first_up[1] + 1][col] = self.spaces[row][col]
-                else:
-                    board_copy[row][col] = self.spaces[row][col]
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                if board_copy[row][col] is None:
-                    self.spaces[row][col] = None
-                else:
-                    self.spaces[row][col] = abs(board_copy[row][col])
-        return changed
-
-    def find_first_down(self, board_copy, row, col) -> tuple[int, int]:
-        """
-        Returns a tuple of the value of the first non-empty cell below the given one,
-            and the row index of that cell.
-            Returns None if no cell found.
-        """
-        for i in range(row+1, GRID_SIZE):
-            if board_copy[i][col] is not None:
-                return (board_copy[i][col], i)
-        return None
+        return self.vertical_move(row_left)
 
     def down(self) -> bool:
         """
         Attempts to move tiles down. Returns a boolean indicating whether
         any tiles were moved or combined.
         """
-        changed = False
-        board_copy = [[None] * GRID_SIZE for i in range(GRID_SIZE)]
-        
-        # iterate through rows in reverse order
-        for row in range(GRID_SIZE - 1, -1, -1):
-            for col in range(GRID_SIZE):
-                # this cell is blank
-                if self.spaces[row][col] is None:
-                    continue
-
-                # this cell is in the bottom row
-                if row == GRID_SIZE - 1:
-                    board_copy[row][col] = self.spaces[row][col]
-                    continue
-
-                # find first non-empty cell below this one
-                first_down = self.find_first_down(board_copy, row, col)
-
-                # all cells below are empty
-                if first_down is None:
-                    changed = True
-                    board_copy[GRID_SIZE - 1][col] = self.spaces[row][col]
-                
-                # this cell matches the cell below
-                elif first_down[0] == self.spaces[row][col]:
-                    changed = True
-                    board_copy[first_down[1]][col] *= -2
-                    self.score += self.spaces[row][col] * 2
-
-                # the cell below is empty
-                elif first_down[1] > row + 1:
-                    changed = True
-                    board_copy[first_down[1] - 1][col] = self.spaces[row][col]
-                
-                # the cell below is adjacent and does not match
-                else:
-                    board_copy[row][col] = self.spaces[row][col]
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                if board_copy[row][col] is None:
-                    self.spaces[row][col] = None
-                else:
-                    self.spaces[row][col] = abs(board_copy[row][col])
-        return changed
+        return self.vertical_move(row_right)
     
     def make_move(self, direction) -> bool:
         """
