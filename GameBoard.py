@@ -99,6 +99,9 @@ class GameBoard():
         for i in range(len(self.spaces)):
             new_board.spaces[i] = self.spaces[i].copy()
         return new_board
+    
+    def hash_board(self):
+        return str(self.spaces)
 
     def __repr__(self):
         # print top lines and first row of numbers/spaces
