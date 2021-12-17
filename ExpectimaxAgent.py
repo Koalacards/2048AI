@@ -1,6 +1,7 @@
 from GameAgent import GameAgent, play_n_times, play_with_agent
 from GameBoard import GRID_SIZE
 from PerfTimer import perf_timer
+import math
 
 class ExpectimaxState():
     def __init__(self, board, player_turn = True) -> None:
@@ -115,6 +116,124 @@ class SmarterExpectimaxAgent(ExpectimaxAgent):
         score = state.get_score()
         return self.get_terminal_value(state) * 1000 + score
 
-play_with_agent(ExpectimaxAgent(5))
+class EdgeExpectimaxAgent(ExpectimaxAgent):
+    """
+        Expectimax Agent that is rewarded for putting as many of the high tiles on the corners as possible
+    """
+    def get_terminal_value(self, state):
+        # return 0
+        # highest tile
+        highestVal = 0
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                tile = state.board.spaces[row][col]
+                if tile != None: highestVal = max(highestVal, tile)
+        return highestVal
+    
+    def evaluate(self, state):
+        return 10 * state.get_score() + 100 *self.get_terminal_value(state) + 1000 * self._evaluate_corners(state) + 1000 * self._num_empty_spaces(state)
+    
+    def _evaluate_corners(self, state):
+        """
+            Returns the sum of the values in the corners
+        """
+        spaces = state.board.spaces
+        corners = [spaces[0][0], spaces[0][GRID_SIZE-1], spaces[GRID_SIZE-1][0], spaces[GRID_SIZE-1][GRID_SIZE-1]]
+        max_val = -1
+        for corner in corners:
+            if corner is not None:
+                max_val = max(max_val, corner)
+        return max_val
+    
+    def _evaluate_edges_no_corners(self, state):
+        spaces = state.board.spaces
+        edges = [spaces[0][1], spaces[0][2], spaces[1][0], spaces[2][0], spaces[GRID_SIZE-1][1], spaces[GRID_SIZE-1][2], spaces[1][GRID_SIZE-1], spaces[2][GRID_SIZE-1]]
+        sum = 0
+        for edge in edges:
+            if edge is not None:
+                sum += edge
+        return sum
+
+    def _num_empty_spaces(self, state):
+        num_empty = 0
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                tile = state.board.spaces[row][col]
+                if tile is None: num_empty += 1
+        return num_empty
+
+class SmoothnessExpectimaxAgent(ExpectimaxAgent):
+    """
+        Expectimax Agent that is rewarded for having each tile have similar values
+    """
+    def get_terminal_value(self, state):
+        # return 0
+        # highest tile
+        highestVal = 0
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                tile = state.board.spaces[row][col]
+                if tile != None: highestVal = max(highestVal, tile)
+        return highestVal
+    
+    def evaluate(self, state):
+        return 5*state.get_score() + 10 * self.get_terminal_value(state) - 1000* self._smoothness_value(state) + 1000 * self._evaluate_corners(state)
+
+    def _smoothness_value(self, state):
+        smoothness = 0
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                tile = state.board.spaces[row][col]
+                if tile is not None:
+                    smoothness += self._calculate_neighbor_differences(state, row, col)
+        return smoothness
+    
+    def _calculate_neighbor_differences(self, state, row, col):
+        spaces = state.board.spaces
+        current_val = spaces[row][col]
+        differences = 0
+        neighbors = []
+        if row != 0:
+            neighbors.append(spaces[row - 1][col])
+        if row != GRID_SIZE - 1:
+            neighbors.append(spaces[row + 1][col])
+        if col != 0:
+            neighbors.append(spaces[row][col-1])
+        if col != GRID_SIZE - 1:
+            neighbors.append(spaces[row][col + 1])
+        for neighbor in neighbors:
+            if neighbor is not None:
+                differences += abs(math.log(current_val, 2) - math.log(neighbor, 2))
+
+        return differences
+
+    def _too_few_empty(self, state):
+        num_empty = 0
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
+                tile = state.board.spaces[row][col]
+                if tile is None: num_empty += 1
+        if num_empty <= 4:
+            return 1
+        else:
+            return 0
+
+    #Try this with corners
+    def _evaluate_corners(self, state):
+        """
+            Returns the sum of the values in the corners
+        """
+        spaces = state.board.spaces
+        corners = [spaces[0][0], spaces[0][GRID_SIZE-1], spaces[GRID_SIZE-1][0], spaces[GRID_SIZE-1][GRID_SIZE-1]]
+        max_val = -1
+        for corner in corners:
+            if corner is not None:
+                max_val = max(max_val, corner)
+        return max_val
+
+
+play_n_times(SmoothnessExpectimaxAgent(5), 10)
+
+#play_with_agent(ExpectimaxAgent(5))
 
 # play_n_times(ExpectimaxAgent(2), 10)

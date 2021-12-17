@@ -25,9 +25,25 @@ def play_n_times(agent, num_games = 100, verbose = False):
     highestTiles = []
     for i in range(num_games):
         score, highestTile = play_with_agent(agent, False, not verbose)
+        print(f"Completed game {i + 1}/{num_games}! Score: {score} Highest Tile: {highestTile}")
         scores.append(score)
         highestTiles.append(highestTile)
     avgScore = sum(scores) / len(scores)
     print("Average score after", num_games, "games:", avgScore)
     print("Highest tile attained:", max(highestTiles))
     print("Median highest tile:", statistics.median(highestTiles))
+    _tile_distribution(highestTiles)
+
+def _tile_distribution(highestTiles):
+    total_tiles = len(highestTiles)
+    tile_dict = {}
+    for tile in highestTiles:
+        if tile_dict.get(tile, None) is None:
+            tile_dict[tile] = 1
+        else:
+            tile_dict[tile] = tile_dict[tile] + 1
+    print("Highest Tile Percentages:")
+    for key, value in tile_dict.items():
+        percent = (value / total_tiles) * 100
+        print(f"{key}: {percent}%")
+    
