@@ -24,8 +24,8 @@ def play_n_times(agent, num_games = 100, verbose = False):
     scores = []
     highestTiles = []
     for i in range(num_games):
-        score, highestTile = play_with_agent(agent, False, not verbose)
-        print(f"Completed game {i + 1}/{num_games}! Score: {score} Highest Tile: {highestTile}")
+        score, highestTile = play_with_agent(agent, False, True)
+        if verbose: print(f"Completed game {i + 1}/{num_games}! Score: {score} Highest Tile: {highestTile}")
         scores.append(score)
         highestTiles.append(highestTile)
     avgScore = sum(scores) / len(scores)

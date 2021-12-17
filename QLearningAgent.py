@@ -51,6 +51,8 @@ class QLearningAgent(GameAgent):
         if board.make_move(action):
           board.add_random_tile()
         reward = board.score - prev_board.score
+        if reward > 0:
+          reward = math.log(reward, 2)
         next_state = board
 
         # compute td-error
@@ -106,6 +108,10 @@ def score_feature(old_board, action):
   board = new_board(old_board, action)
   return board.score
 
+def combine_feature(old_board, action):
+  board = new_board(old_board, action)
+  return board.score - old_board.score
+
 def blank_feature(old_board, action):
   board = new_board(old_board, action)
   return len(board.get_blank_spaces())
@@ -142,4 +148,4 @@ def corner_tile_feature(old_board, action):
 
 approx_agent = ApproximateQLearningAgent(0.0001, 0.9, 0.9)
 approx_agent.train_n_times(1000)
-play_n_times(approx_agent, 100)
+play_n_times(approx_agent, 1000)
