@@ -23,12 +23,7 @@ class ExpectimaxState():
         if self.player_turn:
             return self.board.get_legal_moves()
         else:
-            moves = []
-            for i in range(len(self.board.spaces)):
-                for j in range(len(self.board.spaces)):
-                    if self.board.spaces[i][j] is None:
-                        moves += [(i, j, tile)]
-            return moves
+            return [(*blank, tile) for blank in self.board.get_blank_spaces()]
 
     def get_score(self):
         return self.board.score

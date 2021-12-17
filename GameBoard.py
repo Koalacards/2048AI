@@ -158,16 +158,19 @@ class GameBoard():
         out += '\n'
         return out
 
-    def add_random_tile(self) -> None:
-        """
-        Adds a random tile to a blank space on the board.
-        """
+    def get_blank_spaces(self):
         blank_spaces = []
         for i in range(len(self.spaces)):
             for j in range(len(self.spaces)):
                 if self.spaces[i][j] is None:
                     blank_spaces += [(i, j)]
-        selected_space = random.choice(blank_spaces)
+        return blank_spaces
+
+    def add_random_tile(self) -> None:
+        """
+        Adds a random tile to a blank space on the board.
+        """
+        selected_space = random.choice(self.get_blank_spaces())
 
         # set space to one of the 
         self.spaces[selected_space[0]][selected_space[1]] = random.choices([BASE_NUMBER, BASE_NUMBER * 2], weights=[0.9, 0.1])[0]
