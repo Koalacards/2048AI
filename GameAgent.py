@@ -43,7 +43,7 @@ def _tile_distribution(highestTiles):
         else:
             tile_dict[tile] = tile_dict[tile] + 1
     print("Highest Tile Percentages:")
-    for key, value in tile_dict.items():
+    for key, value in sorted(tile_dict.items()):
         percent = (value / total_tiles) * 100
         print(f"{key}: {percent}%")
     
