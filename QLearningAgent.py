@@ -103,14 +103,6 @@ def new_board(board, action):
   new_board.make_move(action)
   return new_board
 
-def score_feature(old_board, action):
-  board = new_board(old_board, action)
-  return board.score
-
-def combine_feature(old_board, action):
-  board = new_board(old_board, action)
-  return board.score - old_board.score
-
 def blank_feature(old_board, action):
   board = new_board(old_board, action)
   return len(board.get_blank_spaces())
