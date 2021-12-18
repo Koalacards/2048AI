@@ -2,6 +2,7 @@ from GameAgent import GameAgent, play_n_times, play_with_agent
 from GameBoard import GRID_SIZE
 from PerfTimer import perf_timer
 import math
+from threading import Thread
 
 class ExpectimaxState():
     def __init__(self, board, player_turn = True) -> None:
@@ -86,34 +87,10 @@ class ExpectimaxAgent(GameAgent):
                 best_action_value = action_value
         return best_action
 
-class SmarterExpectimaxAgent(ExpectimaxAgent):
-    """
-    WIP
-    """
-    def get_terminal_value(self, state):
-        # return 0
-        # highest tile
-        highestVal = 0
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                tile = state.board.spaces[row][col]
-                if tile != None: highestVal = max(highestVal, tile)
-        return highestVal
 
-    def evaluate(self, state):
-        # tile sum
-        values = set()
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                tile = state.board.spaces[row][col]
-                if tile != None: values.add(tile)
-        tile_sum = sum(values)
-        score = state.get_score()
-        return self.get_terminal_value(state) * 1000 + score
-
-class EdgeExpectimaxAgent(ExpectimaxAgent):
+class CornersExpectimaxAgent(ExpectimaxAgent):
     """
-        Expectimax Agent that is rewarded for putting as many of the high tiles on the corners as possible
+        Expectimax Agent that is rewarded for putting as high numbered of a tile on one of the corners as possible
     """
     def get_terminal_value(self, state):
         # return 0
@@ -126,7 +103,7 @@ class EdgeExpectimaxAgent(ExpectimaxAgent):
         return highestVal
     
     def evaluate(self, state):
-        return 10 * state.get_score() + 100 *self.get_terminal_value(state) + 1000 * self._evaluate_corners(state) + 1000 * self._num_empty_spaces(state)
+        return 5* state.get_score() + 10 *self.get_terminal_value(state) + 1000 * self._evaluate_corners(state)
     
     def _evaluate_corners(self, state):
         """
@@ -139,27 +116,17 @@ class EdgeExpectimaxAgent(ExpectimaxAgent):
             if corner is not None:
                 max_val = max(max_val, corner)
         return max_val
-    
-    def _evaluate_edges_no_corners(self, state):
-        spaces = state.board.spaces
-        edges = [spaces[0][1], spaces[0][2], spaces[1][0], spaces[2][0], spaces[GRID_SIZE-1][1], spaces[GRID_SIZE-1][2], spaces[1][GRID_SIZE-1], spaces[2][GRID_SIZE-1]]
-        sum = 0
-        for edge in edges:
-            if edge is not None:
-                sum += edge
-        return sum
 
-    def _num_empty_spaces(self, state):
-        num_empty = 0
-        for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE):
-                tile = state.board.spaces[row][col]
-                if tile is None: num_empty += 1
-        return num_empty
 
-class SmoothnessExpectimaxAgent(ExpectimaxAgent):
+class SmoothEmptyCornersExpectimaxAgent(ExpectimaxAgent):
     """
-        Expectimax Agent that is rewarded for having each tile have similar values
+        Expectimax Agent that uses 5 heuristics:
+        - Score
+        - Terminal value
+        - Corner heuristic
+        - Smoothness
+        - Empty spaces
+
     """
     def get_terminal_value(self, state):
         # return 0
@@ -172,7 +139,7 @@ class SmoothnessExpectimaxAgent(ExpectimaxAgent):
         return highestVal
     
     def evaluate(self, state):
-        return 5*state.get_score() + 10 * self.get_terminal_value(state) - 1000* self._smoothness_value(state) + 1000 * self._evaluate_corners(state)
+        return 5*state.get_score() + 10 * self.get_terminal_value(state) - 1000* self._smoothness_value(state) + 1000 * self._evaluate_corners(state)- 500  * self._too_few_empty(state)
 
     def _smoothness_value(self, state):
         smoothness = 0
@@ -208,7 +175,7 @@ class SmoothnessExpectimaxAgent(ExpectimaxAgent):
             for col in range(GRID_SIZE):
                 tile = state.board.spaces[row][col]
                 if tile is None: num_empty += 1
-        if num_empty <= 4:
+        if num_empty <= 3:
             return 1
         else:
             return 0
@@ -226,8 +193,17 @@ class SmoothnessExpectimaxAgent(ExpectimaxAgent):
                 max_val = max(max_val, corner)
         return max_val
 
+class ThreadRunner(Thread):
+    def __init__(self):
+        super().__init__()
 
-play_n_times(SmoothnessExpectimaxAgent(5), 10)
+    def run(self):
+        play_n_times(CornersExpectimaxAgent(5), 10, verbose=True)
+
+t = ThreadRunner()
+
+t.start()
+#play_n_times(SmoothnessExpectimaxAgent(5), 3, verbose=True)
 
 #play_with_agent(ExpectimaxAgent(5))
 

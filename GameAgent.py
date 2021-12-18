@@ -1,5 +1,6 @@
 import statistics
 from GameBoard import GameBoard
+from time import time
 
 class GameAgent():
   def get_move(self, board):
@@ -24,8 +25,11 @@ def play_n_times(agent, num_games = 100, verbose = False):
     scores = []
     highestTiles = []
     for i in range(num_games):
+        ts = time()
         score, highestTile = play_with_agent(agent, False, True)
-        if verbose: print(f"Completed game {i + 1}/{num_games}! Score: {score} Highest Tile: {highestTile}")
+        if verbose:
+            print(f"Completed game {i + 1}/{num_games}! Score: {score} Highest Tile: {highestTile}")
+            print(f"Game completed in {time()-ts} seconds")
         scores.append(score)
         highestTiles.append(highestTile)
     avgScore = sum(scores) / len(scores)
