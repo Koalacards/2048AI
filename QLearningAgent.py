@@ -23,10 +23,10 @@ class QLearningAgent(GameAgent):
         best_val = val
     return best_action
 
-  def get_q(self, state, action):
-    hashed_state = state.hash_board()
-    if ((hashed_state, action) in self.q_vals):
-      return self.q_vals[hashed_state, action]
+  def get_q(self, board, action):
+    hashed_board = board.hash_board()
+    if ((hashed_board, action) in self.q_vals):
+      return self.q_vals[hashed_board, action]
     else:
       return 0
 
@@ -53,10 +53,9 @@ class QLearningAgent(GameAgent):
         reward = board.score - prev_board.score
         if reward > 0:
           reward = math.log(reward, 2)
-        next_state = board
 
         # compute td-error
-        next_q = max([self.get_q(next_state, next_action) for next_action in PLAYER_ACTIONS])
+        next_q = max([self.get_q(board, next_action) for next_action in PLAYER_ACTIONS])
         error = reward + self.discount*next_q - self.get_q(prev_board, action)
 
         # update q-values
@@ -82,10 +81,10 @@ class ApproximateQLearningAgent(QLearningAgent):
     self.features = [blank_feature, highest_tile_feature, sum_tiles_feature, corner_tile_feature]
     self.weights = [0]*len(self.features)
 
-  def get_q(self, state, action):
+  def get_q(self, board, action):
     total = 0
     for i, feature in enumerate(self.features):
-      total += (self.weights[i] * feature(state, action))
+      total += (self.weights[i] * feature(board, action))
     return total
 
   def update_q_vals(self, board, action, error):
